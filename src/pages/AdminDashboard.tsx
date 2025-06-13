@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,12 +9,50 @@ import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats] = useState({
-    totalKeys: 12,
-    availableKeys: 8,
-    totalUsers: 5,
-    activeUsers: 3,
+  const [stats, setStats] = useState({
+    totalKeys: 0,
+    availableKeys: 0,
+    totalUsers: 0,
+    activeKeys: 0,
   });
+
+  useEffect(() => {
+    const calculateStats = () => {
+      // Получаем данные из localStorage
+      const keys = JSON.parse(localStorage.getItem("keys") || "[]");
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+
+      // Подсчитываем статистику
+      const totalKeys = keys.length;
+      const availableKeys = keys.filter(
+        (key: any) => key.status === "available",
+      ).length;
+      const activeKeys = keys.filter(
+        (key: any) => key.status === "taken",
+      ).length;
+      const totalUsers = users.length;
+
+      setStats({
+        totalKeys,
+        availableKeys,
+        totalUsers,
+        activeKeys,
+      });
+    };
+
+    calculateStats();
+
+    // Обновляем статистику при изменении данных
+    const handleStorageChange = () => {
+      calculateStats();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     navigate("/");
@@ -82,7 +120,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {stats.activeUsers}
+                {stats.activeKeys}
               </div>
             </CardContent>
           </Card>
