@@ -231,9 +231,16 @@ const KeyManager = () => {
                     Штрих-код: {key.barcode} • Локация: {key.location}
                   </p>
                   {!key.available && key.takenBy && (
-                    <p className="text-sm text-orange-600">
-                      Взят: {key.takenBy} ({key.takenAt?.toLocaleString()})
-                    </p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Icon name="User" size={14} className="text-orange-600" />
+                      <p className="text-sm font-medium text-orange-700">
+                        Взят: {key.takenBy}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {key.takenAt?.toLocaleDateString()}{" "}
+                        {key.takenAt?.toLocaleTimeString()}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
