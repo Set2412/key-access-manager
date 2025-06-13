@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import KeyManager from "@/components/KeyManager";
 import UserManager from "@/components/UserManager";
+import OperationLogs from "@/components/OperationLogs";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -137,6 +138,10 @@ const AdminDashboard = () => {
               <Icon name="Users" size={16} />
               <span>Управление пользователями</span>
             </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center space-x-2">
+              <Icon name="FileText" size={16} />
+              <span>Лог операций</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="keys">
@@ -145,6 +150,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="users">
             <UserManager />
+          </TabsContent>
+
+          <TabsContent value="logs">
+            <OperationLogs />
           </TabsContent>
         </Tabs>
       </main>
