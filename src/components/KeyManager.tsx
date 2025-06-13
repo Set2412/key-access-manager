@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,38 +24,69 @@ interface Key {
 }
 
 const KeyManager = () => {
-  const [keys, setKeys] = useState<Key[]>([
-    {
-      id: "1",
-      name: "Офис 101",
-      barcode: "123456789",
-      location: "1 этаж",
-      available: true,
-    },
-    {
-      id: "2",
-      name: "Склад А",
-      barcode: "987654321",
-      location: "Подвал",
-      available: false,
-      takenBy: "Иван Петров",
-      takenAt: new Date(),
-    },
-    {
-      id: "3",
-      name: "Кабинет директора",
-      barcode: "456789123",
-      location: "2 этаж",
-      available: true,
-    },
-  ]);
-
+  const [keys, setKeys] = useState<Key[]>([]);
   const [newKey, setNewKey] = useState({ name: "", barcode: "", location: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState<Key | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Загрузка ключей из localStorage при инициализации
+  useEffect(() => {
+    const savedKeys = localStorage.getItem("keys");
+    if (savedKeys) {
+      const parsedKeys = JSON.parse(savedKeys).map((key: any) => ({
+        ...key,
+        takenAt: key.takenAt ? new Date(key.takenAt) : undefined,
+      }));
+      setKeys(parsedKeys);
+    } else {
+      // Данные по умолчанию
+      const defaultKeys = [
+        {
+          id: "1",
+          name: "Офис 101",
+          barcode: "123456789",
+          location: "1 этаж",
+          available: true,
+        },
+        {
+          id: "2",
+          name: "Склад А",
+          barcode: "987654321",
+          location: "Подвал",
+          available: false,
+          takenBy: "Иван Петров",
+          takenAt: new Date(),
+        },
+        {
+          id: "3",
+          name: "Кабинет директора",
+          barcode: "456789123",
+          location: "2 этаж",
+          available: true,
+        },
+      ];
+      setKeys(defaultKeys);
+      localStorage.setItem("keys", JSON.stringify(defaultKeys));
+    }
+  }, []);
+
+  // Сохранение ключей в localStorage при изменении
+  useEffect(() => {
+    if (keys.length > 0) {
+      localStorage.setItem("keys", JSON.stringify(keys));
+    }
+  }, [keys]);
 
   const handleAddKey = () => {
     if (!newKey.name || !newKey.barcode || !newKey.location) {
       toast.error("Заполните все поля");
+      return;
+    }
+
+    // Проверка на дублирование штрих-кода
+    if (keys.some((k) => k.barcode === newKey.barcode)) {
+      toast.error("Ключ с таким штрих-кодом уже существует");
       return;
     }
 
@@ -71,11 +102,42 @@ const KeyManager = () => {
     setNewKey({ name: "", barcode: "", location: "" });
     setDialogOpen(false);
     toast.success("Ключ добавлен");
+
+    // Сохранение в localStorage для синхронизации с пользовательским интерфейсом
+    localStorage.setItem("keys", JSON.stringify([...keys, key]));
+  };
+
+  const handleReturnKey = (id: string) => {
+    setKeys(
+      keys.map((key) =>
+        key.id === id
+          ? { ...key, available: true, takenBy: undefined, takenAt: undefined }
+          : key,
+      ),
+    );
+    toast.success("Ключ возвращен");
+    localStorage.setItem(
+      "keys",
+      JSON.stringify(
+        keys.map((key) =>
+          key.id === id
+            ? {
+                ...key,
+                available: true,
+                takenBy: undefined,
+                takenAt: undefined,
+              }
+            : key,
+        ),
+      ),
+    );
   };
 
   const handleDeleteKey = (id: string) => {
-    setKeys(keys.filter((k) => k.id !== id));
+    const updatedKeys = keys.filter((k) => k.id !== id);
+    setKeys(updatedKeys);
     toast.success("Ключ удален");
+    localStorage.setItem("keys", JSON.stringify(updatedKeys));
   };
 
   return (
@@ -165,6 +227,17 @@ const KeyManager = () => {
                 >
                   {key.available ? "Доступен" : "Выдан"}
                 </span>
+                {!key.available && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleReturnKey(key.id)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <Icon name="RotateCcw" size={14} className="mr-1" />
+                    Вернуть
+                  </Button>
+                )}
                 <Button
                   variant="destructive"
                   size="sm"

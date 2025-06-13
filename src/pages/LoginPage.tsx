@@ -23,13 +23,33 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Простая авторизация для демо
-    if (login === "admin" && password === "admin") {
-      toast.success("Добро пожаловать, администратор!");
-      navigate("/admin");
-    } else if (login && password) {
-      toast.success(`Добро пожаловать, ${login}!`);
-      navigate("/user");
+    // Загружаем пользователей из localStorage
+    const savedUsers = localStorage.getItem("users");
+    const users = savedUsers
+      ? JSON.parse(savedUsers)
+      : [
+          {
+            login: "admin",
+            password: "admin",
+            role: "admin",
+            name: "Администратор",
+          },
+        ];
+
+    // Проверка авторизации
+    const user = users.find(
+      (u: any) => u.login === login && u.password === password,
+    );
+
+    if (user) {
+      if (user.role === "admin") {
+        toast.success("Добро пожаловать, администратор!");
+        navigate("/admin");
+      } else {
+        sessionStorage.setItem("currentUser", user.name);
+        toast.success(`Добро пожаловать, ${user.name}!`);
+        navigate("/user");
+      }
     } else {
       toast.error("Неверный логин или пароль");
     }

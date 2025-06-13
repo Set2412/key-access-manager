@@ -62,6 +62,22 @@ const UserManager = () => {
   });
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Генерация случайного пароля
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let password = "";
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  const handleGeneratePassword = () => {
+    const newPassword = generatePassword();
+    setNewUser({ ...newUser, password: newPassword });
+    toast.success("Пароль сгенерирован");
+  };
+
   const handleAddUser = () => {
     if (!newUser.name || !newUser.login || !newUser.password) {
       toast.error("Заполните все поля");
@@ -83,10 +99,14 @@ const UserManager = () => {
       active: true,
     };
 
-    setUsers([...users, user]);
+    const updatedUsers = [...users, user];
+    setUsers(updatedUsers);
     setNewUser({ name: "", login: "", password: "", role: "user" });
     setDialogOpen(false);
     toast.success("Пользователь добавлен");
+
+    // Сохранение в localStorage для синхронизации
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
   };
 
   const handleToggleUser = (id: string) => {
@@ -147,15 +167,26 @@ const UserManager = () => {
               </div>
               <div>
                 <Label htmlFor="userPassword">Пароль</Label>
-                <Input
-                  id="userPassword"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, password: e.target.value })
-                  }
-                  placeholder="Введите пароль"
-                />
+                <div className="flex space-x-2">
+                  <Input
+                    id="userPassword"
+                    type="text"
+                    value={newUser.password}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, password: e.target.value })
+                    }
+                    placeholder="Введите пароль"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGeneratePassword}
+                    className="px-3"
+                  >
+                    <Icon name="RefreshCw" size={14} />
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="userRole">Роль</Label>

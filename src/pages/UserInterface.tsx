@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,23 +19,40 @@ interface KeyRecord {
 const UserInterface = () => {
   const navigate = useNavigate();
   const [barcode, setBarcode] = useState("");
-  const [keys] = useState<KeyRecord[]>([
-    { id: "1", name: "Офис 101", barcode: "123456789", available: true },
-    {
-      id: "2",
-      name: "Склад А",
-      barcode: "987654321",
-      available: false,
-      takenBy: "Иван Петров",
-      takenAt: new Date(),
-    },
-    {
-      id: "3",
-      name: "Кабинет директора",
-      barcode: "456789123",
-      available: true,
-    },
-  ]);
+  const [currentUser, setCurrentUser] = useState<string>("");
+  const [keys, setKeys] = useState<KeyRecord[]>([]);
+
+  // Загрузка ключей из localStorage
+  useEffect(() => {
+    const savedKeys = localStorage.getItem("keys");
+    if (savedKeys) {
+      const parsedKeys = JSON.parse(savedKeys).map((key: any) => ({
+        ...key,
+        takenAt: key.takenAt ? new Date(key.takenAt) : undefined,
+      }));
+      setKeys(parsedKeys);
+    }
+  }, []);
+
+  // Сохранение ключей в localStorage при изменении статуса
+  const updateKeyStatus = (
+    keyId: string,
+    available: boolean,
+    takenBy?: string,
+  ) => {
+    const updatedKeys = keys.map((key) =>
+      key.id === keyId
+        ? {
+            ...key,
+            available,
+            takenBy: available ? undefined : takenBy,
+            takenAt: available ? undefined : new Date(),
+          }
+        : key,
+    );
+    setKeys(updatedKeys);
+    localStorage.setItem("keys", JSON.stringify(updatedKeys));
+  };
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +60,22 @@ const UserInterface = () => {
 
     if (key) {
       if (key.available) {
+        // Взятие ключа
+        updateKeyStatus(key.id, false, "Текущий пользователь");
         toast.success(`Ключ "${key.name}" выдан`);
       } else {
+        // Возврат ключа
+        updateKeyStatus(key.id, true);
         toast.success(`Ключ "${key.name}" возвращен`);
       }
+    } else {
+      toast.error("Ключ с таким штрих-кодом не найден");
+        setBarcode("");
+        return;
+      }
+
+      setKeys(updatedKeys);
+      localStorage.setItem("keys", JSON.stringify(updatedKeys));
     } else {
       toast.error("Ключ с таким штрих-кодом не найден");
     }
@@ -65,7 +94,16 @@ const UserInterface = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <Icon name="Scan" className="text-purple-600" size={24} />
-              <h1 className="text-xl font-bold text-gray-900">Выдача ключей</h1>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Выдача ключей
+                </h1>
+                {currentUser && (
+                  <p className="text-sm text-gray-600">
+                    Пользователь: {currentUser}
+                  </p>
+                )}
+              </div>
             </div>
             <Button variant="outline" onClick={handleLogout}>
               <Icon name="LogOut" size={16} className="mr-2" />
