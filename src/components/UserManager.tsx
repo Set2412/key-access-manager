@@ -24,35 +24,55 @@ interface User {
 }
 
 const UserManager = () => {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "Администратор",
-      login: "admin",
-      password: "admin",
-      role: "admin",
-      createdAt: new Date(),
-      active: true,
-    },
-    {
-      id: "2",
-      name: "Иван Петров",
-      login: "ipetrov",
-      password: "user123",
-      role: "user",
-      createdAt: new Date(),
-      active: true,
-    },
-    {
-      id: "3",
-      name: "Анна Сидорова",
-      login: "asidorova",
-      password: "pass456",
-      role: "user",
-      createdAt: new Date(),
-      active: false,
-    },
-  ]);
+  // Инициализация пользователей из localStorage или дефолтные данные
+  const [users, setUsers] = useState<User[]>(() => {
+    const savedUsers = localStorage.getItem("users");
+    if (savedUsers) {
+      try {
+        return JSON.parse(savedUsers).map((user: any) => ({
+          ...user,
+          createdAt: new Date(user.createdAt),
+        }));
+      } catch (error) {
+        console.error("Ошибка при загрузке пользователей:", error);
+      }
+    }
+
+    // Дефолтные пользователи, если нет сохраненных
+    const defaultUsers = [
+      {
+        id: "1",
+        name: "Администратор",
+        login: "admin",
+        password: "admin",
+        role: "admin" as const,
+        createdAt: new Date(),
+        active: true,
+      },
+      {
+        id: "2",
+        name: "Иван Петров",
+        login: "ipetrov",
+        password: "user123",
+        role: "user" as const,
+        createdAt: new Date(),
+        active: true,
+      },
+      {
+        id: "3",
+        name: "Анна Сидорова",
+        login: "asidorova",
+        password: "pass456",
+        role: "user" as const,
+        createdAt: new Date(),
+        active: false,
+      },
+    ];
+
+    // Сохраняем дефолтные данные в localStorage
+    localStorage.setItem("users", JSON.stringify(defaultUsers));
+    return defaultUsers;
+  });
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -110,11 +130,11 @@ const UserManager = () => {
   };
 
   const handleToggleUser = (id: string) => {
-    setUsers(
-      users.map((user) =>
-        user.id === id ? { ...user, active: !user.active } : user,
-      ),
+    const updatedUsers = users.map((user) =>
+      user.id === id ? { ...user, active: !user.active } : user,
     );
+    setUsers(updatedUsers);
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
     toast.success("Статус пользователя изменен");
   };
 
@@ -123,7 +143,9 @@ const UserManager = () => {
       toast.error("Нельзя удалить администратора");
       return;
     }
-    setUsers(users.filter((u) => u.id !== id));
+    const updatedUsers = users.filter((u) => u.id !== id);
+    setUsers(updatedUsers);
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
     toast.success("Пользователь удален");
   };
 
