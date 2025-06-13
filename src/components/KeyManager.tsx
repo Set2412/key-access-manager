@@ -116,21 +116,41 @@ const KeyManager = () => {
       ),
     );
     toast.success("Ключ возвращен");
-    localStorage.setItem(
-      "keys",
-      JSON.stringify(
-        keys.map((key) =>
-          key.id === id
-            ? {
-                ...key,
-                available: true,
-                takenBy: undefined,
-                takenAt: undefined,
-              }
-            : key,
-        ),
+  };
+
+  const handleIssueKey = (keyId: string, cardCode: string) => {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find((u: any) => u.cardCode === cardCode);
+
+    if (!user) {
+      toast.error("Пользователь с таким кодом карты не найден");
+      return;
+    }
+
+    if (!user.active) {
+      toast.error("Пользователь отключен");
+      return;
+    }
+
+    const key = keys.find((k) => k.id === keyId);
+    if (!key?.available) {
+      toast.error("Ключ недоступен");
+      return;
+    }
+
+    setKeys(
+      keys.map((key) =>
+        key.id === keyId
+          ? {
+              ...key,
+              available: false,
+              takenBy: user.name,
+              takenAt: new Date(),
+            }
+          : key,
       ),
     );
+    toast.success(`Ключ "${key.name}" выдан пользователю ${user.name}`);
   };
 
   const handleDeleteKey = (id: string) => {
@@ -227,6 +247,13 @@ const KeyManager = () => {
                 >
                   {key.available ? "Доступен" : "Выдан"}
                 </span>
+                {key.available && (
+                  <IssueKeyDialog
+                    keyId={key.id}
+                    keyName={key.name}
+                    onIssue={handleIssueKey}
+                  />
+                )}
                 {!key.available && (
                   <Button
                     variant="outline"
@@ -251,6 +278,74 @@ const KeyManager = () => {
         ))}
       </div>
     </div>
+  );
+};
+
+// Компонент для выдачи ключа
+const IssueKeyDialog = ({
+  keyId,
+  keyName,
+  onIssue,
+}: {
+  keyId: string;
+  keyName: string;
+  onIssue: (keyId: string, cardCode: string) => void;
+}) => {
+  const [cardCode, setCardCode] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleSubmit = () => {
+    if (!cardCode.trim()) {
+      toast.error("Введите код карты");
+      return;
+    }
+    onIssue(keyId, cardCode.trim());
+    setCardCode("");
+    setDialogOpen(false);
+  };
+
+  return (
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700"
+        >
+          <Icon name="User" size={14} className="mr-1" />
+          Выдать
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Выдать ключ: {keyName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="cardCode">Код карты сотрудника</Label>
+            <Input
+              id="cardCode"
+              value={cardCode}
+              onChange={(e) => setCardCode(e.target.value)}
+              placeholder="Отсканируйте или введите код карты"
+              autoFocus
+            />
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={handleSubmit} className="flex-1">
+              Выдать ключ
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              className="flex-1"
+            >
+              Отмена
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
