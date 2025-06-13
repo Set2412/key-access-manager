@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Icon from "@/components/ui/icon";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 interface KeyRecord {
   id: string;
@@ -62,22 +62,18 @@ const UserInterface = () => {
       if (key.available) {
         // Взятие ключа
         updateKeyStatus(key.id, false, "Текущий пользователь");
-        toast.success(`Ключ "${key.name}" выдан`);
+        toast({ title: "Успех", description: `Ключ "${key.name}" выдан` });
       } else {
         // Возврат ключа
         updateKeyStatus(key.id, true);
-        toast.success(`Ключ "${key.name}" возвращен`);
+        toast({ title: "Успех", description: `Ключ "${key.name}" возвращен` });
       }
     } else {
-      toast.error("Ключ с таким штрих-кодом не найден");
-        setBarcode("");
-        return;
-      }
-
-      setKeys(updatedKeys);
-      localStorage.setItem("keys", JSON.stringify(updatedKeys));
-    } else {
-      toast.error("Ключ с таким штрих-кодом не найден");
+      toast({
+        title: "Ошибка",
+        description: "Ключ с таким штрих-кодом не найден",
+        variant: "destructive",
+      });
     }
 
     setBarcode("");
