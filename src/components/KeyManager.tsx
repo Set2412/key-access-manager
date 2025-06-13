@@ -138,19 +138,25 @@ const KeyManager = () => {
       return;
     }
 
+    // Используем полное имя пользователя
+    const fullName =
+      user.name ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      user.login;
+
     setKeys(
       keys.map((key) =>
         key.id === keyId
           ? {
               ...key,
               available: false,
-              takenBy: user.name,
+              takenBy: fullName,
               takenAt: new Date(),
             }
           : key,
       ),
     );
-    toast.success(`Ключ "${key.name}" выдан пользователю ${user.name}`);
+    toast.success(`Ключ "${key.name}" выдан пользователю ${fullName}`);
   };
 
   const handleDeleteKey = (id: string) => {
